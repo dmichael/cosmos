@@ -33,32 +33,39 @@ const getFilePaths = (root) => {
 const loadSchemas = (root) => getFilePaths(root).then(filepaths => filepaths.map(schema.load));
 
 program
-  .arguments('<command>')
-  .option('-f, --force', 'Force recompilation')
-  .option('-n, --network', 'Force recompilation')
-  .action(function(command) {
-    switch(command) {
-      case 'deploy':
-        loadSchemas('./build/contracts')
-          .then(schemas => schemas.forEach(s => {
-            deploy(s).then(contract => {
-              set(s, 'networks.development.address', contract.address);
-              schema.save(s);
-            });
+  .command('deploy [contract]')
+  .action((contract) => {
+    loadSchemas('./build/contracts')
+      .then(schemas => schemas.forEach(s => {
+        deploy(s).then(contract => {
+          set(s, 'networks.development.address', contract.address);
+          schema.save(s);
+        });
+      }));
+    });
+  
+
+program
+  .command('compile [contract]')
+  .description('Compile a contract. Defaults to compile all contracts.')
+  .action((contract, options) => {
+    getFilePaths('./contracts')
+      .then(compile.compile)
+      .then(compile.format)
+      .then((schemas) => schemas.forEach(s => schema.save(s)))
+      .catch(console.error)
+  }).on('--help', function() {
+    console.log('  Examples:');
+    console.log();
+    console.log('    $ deploy exec sequential');
+    console.log('    $ deploy exec async');
+    console.log();
+  });
 
 
-          }))
-        break;
-      case 'compile':
-        getFilePaths('./contracts')
-          .then(compile.compile)
-          .then(compile.format)
-          .then((schemas) => schemas.forEach(s => schema.save(s)))
-          .catch(console.error)
-        break;
-      default:
-        console.log(`Unknown command: ${command}`)
-        break;
-    }
-  })
-  .parse(process.argv);
+program
+  .version('0.0.1')
+
+  .command('deploy [contract]', 'deploy all contracts')
+
+program.parse(process.argv);
