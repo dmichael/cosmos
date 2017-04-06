@@ -6,8 +6,9 @@ Cosmos aims to provide the bare minimum of command-line tooling needed to compil
 
 ### Features
 
-* **Minimal command line tooling**: Author and deploy contracts without a framework!
-* **Truffle compatibility**: Generates and consumes Truffle compatible contract schema and configuration files
+* **Minimal command line tooling** - Author and deploy contracts without a framework!
+* **Truffle compatibility** - Generates and consumes Truffle compatible contract schema and configuration files.
+* **Configurable** - Intelligent defaults, configure as necessary.
 
 ## Usage
 
@@ -48,11 +49,17 @@ Cosmos expects
 * Contracts reside in `./contracts`
 * Compiled schema will be saved to `./build/contracts `
 
+Compilation wraps the [`solc`](https://github.com/ethereum/solc-js) library.
+
 ## Deployment
 
 ```
 cosmos deploy
 ```
+
+By default, Cosmos will attempt to deploy to `http://localhost:8545`. You must have a node running on at this address for `deploy` to work.
+
+Deployment uses the [`web3.js`](https://github.com/ethereum/web3.js) library.
 
 ## Configuration
 
