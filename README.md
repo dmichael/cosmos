@@ -2,6 +2,9 @@
 
 A minimal toolkit for working with Solidity contracts.
 
+**This is a work in progress.**
+<br>**I will remove this warning when its ready to use.**
+
 Cosmos aims to provide the bare minimum of command-line tooling needed to compile and deploy contracts to an Ethereum network.
 
 ### Features
