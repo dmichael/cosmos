@@ -1,26 +1,48 @@
 #!/usr/bin/env node
-require('dotenv').config()
 
 const fs = require('fs');
 const path = require('path');
 const program = require('commander');
 const mkdirp = require('mkdirp');
 const chalk = require('chalk');
-
 const set = require('lodash/set');
+const get = require('lodash/get');
 
 // Initialize schema with default compileroot
 const compile = require('./src/compile')();
-const deploy = require('./src/deploy');
 // Initialize schema with default buildroot
 const schema = require('./src/schema')();
+const deploy = require('./src/deploy');
+// Load up the config
+if (!fs.existsSync('.cosmosrc')) {
+  console.warn(chalk.yellow('.cosmosrc file does not yet exist.'));
+}
+
+let config = {}
+try {
+  config = JSON.parse(fs.readFileSync('./.cosmosrc', 'utf8'));
+} catch (err) {
+}
 
 // Execute a deployment, taking an optional contract name
-const execDeploy = contract => {
+const execDeploy = (contract, options) => {
+  // If there is a network, resolve it from the config
+  let opts = {}
+  let network = options.network || 'development';
 
+  if (!options.network) {
+    console.log(chalk.yellow('No network specified. Using defaults.'));
+  } else {
+    opts = get(config, ['networks', options.network], null)
+    if (!opts) {
+      console.log(chalk.red(`No network defined in .cosmosrc for \'${options.network}\'!`))
+      return;
+    };
+  }
+  
   const deployAndSave = (s) => {
-    deploy(s).then(contract => {
-      set(s, 'networks.development.address', contract.address);
+    deploy(s, opts).then(contract => {
+      set(s, `networks.${network}.address`, contract.address);
       schema.save(s);
     });
   }
@@ -47,7 +69,13 @@ const execCompile = contract => {
 // DEPLOY
 program
   .command('deploy [contract]')
+  .option('-n, --network <network>', 'Choose a network as defined in .cosmosrc')
   .action(execDeploy);
+  //
+  // .action(() => {
+  //   console.log(program.network)
+  // });
+
 
 // COMPILE
 program
@@ -62,10 +90,5 @@ program
     console.log();
   });
 
-
-program
-  .version('0.0.1')
-
-  .command('deploy [contract]', 'deploy all contracts')
-
+program.version('0.0.1');
 program.parse(process.argv);

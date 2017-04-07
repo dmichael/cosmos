@@ -12,9 +12,12 @@ const Gas = require('./gas')
  * @return {Promise}          [description]
  */
 const deploy = (schema, options = {}) => {
-  console.log(chalk.gray(`Deploying ${schema.contract_name}`));
   // create an instance of web3 using the HTTP provider.
-  const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+  let uri = options.uri || 'http://localhost:8545';
+
+  console.log(chalk.gray(`Deploying ${schema.contract_name} to ${uri}`));
+
+  const web3 = new Web3(new Web3.providers.HttpProvider(uri));
   const gas = Gas(web3);
   const Contract = web3.eth.contract(schema.abi);
 
