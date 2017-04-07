@@ -6,24 +6,37 @@ const moment = require('moment');
 
 const Gas = require('./gas')
 
+const isNetworkAvailable = (uri) => {
+  try {
+    const web3 = new Web3(new Web3.providers.HttpProvider(uri));
+    web3.eth.getBlock("latest")
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
 /**
  * [deploy description]
  * @param  {[type]} schema The serialized representation of a contract. In the style of Truffle
  * @return {Promise}          [description]
  */
-const deploy = (schema, options = {}) => {
+const deploy = (schema, uri, options = {}) => {
   // create an instance of web3 using the HTTP provider.
-  let uri = options.uri || 'http://localhost:8545';
+  // let uri = options.uri || 'http://localhost:8545';
 
   console.log(chalk.gray(`Deploying ${schema.contract_name} to ${uri}`));
 
   const web3 = new Web3(new Web3.providers.HttpProvider(uri));
+
   const gas = Gas(web3);
   const Contract = web3.eth.contract(schema.abi);
 
-  let gasEstimate = gas.getEstimate(schema.unlinked_binary);
+  // let gasEstimate = gas.getEstimate(schema.unlinked_binary);
   // console.log(`gasEstimate is ${gasEstimate}`);
   // console.log("gasLimit: " + gas.getLimit());
+
+
 
   const defaults = {
     from: web3.eth.accounts[0],
@@ -34,9 +47,11 @@ const deploy = (schema, options = {}) => {
   options = Object.assign(defaults, options);
 
   return new Promise((resolve, reject) => {
+
     // using the web3 contract, create it thereby deploying to the network
     Contract.new(options, (err, contract) => {
       if (err) {
+
         return reject(e);
       }
 
@@ -51,4 +66,7 @@ const deploy = (schema, options = {}) => {
   });
 }
 
-module.exports = deploy;
+module.exports = {
+  isNetworkAvailable,
+  deploy
+};

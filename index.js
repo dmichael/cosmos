@@ -28,6 +28,7 @@ try {
 const execDeploy = (contract, options) => {
   // If there is a network, resolve it from the config
   let opts = {}
+  let uri = 'http://localhost:8545'
   let network = options.network || 'development';
 
   if (!options.network) {
@@ -38,13 +39,21 @@ const execDeploy = (contract, options) => {
       console.log(chalk.red(`No network defined in .cosmosrc for \'${options.network}\'!`))
       return;
     };
+    uri = opts.uri
   }
-  
+
+  if (!deploy.isNetworkAvailable(uri)) {
+    console.log(chalk.red(`Network at ${uri} is unavailable.`))
+    return;
+  }
+
   const deployAndSave = (s) => {
-    deploy(s, opts).then(contract => {
-      set(s, `networks.${network}.address`, contract.address);
-      schema.save(s);
-    });
+    deploy.deploy(s, uri, opts)
+      .then(contract => {
+        set(s, `networks.${network}.address`, contract.address);
+        schema.save(s);
+      })
+      .catch(e => console.log(chalk.red(e.message)));
   }
 
   if (contract) {
