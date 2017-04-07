@@ -12,7 +12,7 @@ const Gas = require('./gas')
  * @return {Promise}          [description]
  */
 const deploy = (schema, options = {}) => {
-
+  console.log(chalk.gray(`Deploying ${schema.contract_name}`));
   // create an instance of web3 using the HTTP provider.
   const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
   const gas = Gas(web3);
@@ -38,7 +38,7 @@ const deploy = (schema, options = {}) => {
       }
 
       if (!contract.address) {
-        console.log(`Contract sent: ${contract.transactionHash}. Waiting to be mined ...`);
+        console.log(`Contract sent: ${contract.transactionHash} ...`);
       } else {
         console.log(`Contract mined! Address: ${contract.address}`);
         resolve(contract);

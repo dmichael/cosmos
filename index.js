@@ -9,56 +9,56 @@ const chalk = require('chalk');
 
 const set = require('lodash/set');
 
-const compile = require('./src/compile');
+// Initialize schema with default compileroot
+const compile = require('./src/compile')();
 const deploy = require('./src/deploy');
-const schema = require('./src/schema');
+// Initialize schema with default buildroot
+const schema = require('./src/schema')();
 
-const buildPath = './build/contracts';
+// Execute a deployment, taking an optional contract name
+const execDeploy = contract => {
 
-const getFilePaths = (root) => {
-  return new Promise((resolve, reject) => {
-    fs.readdir(root, function(err, items) {
-      if (err) {
-        reject(err);
-        return;
-      }
-      // Get the absolute paths
-      items = items.map(i => path.join(root, i))
-      resolve(items);
+  const deployAndSave = (s) => {
+    deploy(s).then(contract => {
+      set(s, 'networks.development.address', contract.address);
+      schema.save(s);
     });
-  });
+  }
+
+  if (contract) {
+    schema.load(contract).then(deployAndSave);
+  } else {
+    schema.loadAll().then(schemas => schemas.forEach(deployAndSave));
+  }
 }
 
-// Load the all schemas from the build path
-const loadSchemas = (root) => getFilePaths(root).then(filepaths => filepaths.map(schema.load));
+const execCompile = contract => {
+  if (contract) {
+    compile.compile([contract]).then(compile.format).then(schemas => {
+      schemas.forEach(schema.save)
+    });
+  } else {
+    compile.compileAll([contract]).then(compile.format).then(schemas => {
+      schemas.forEach(schema.save)
+    });
+  }
+}
 
+// DEPLOY
 program
   .command('deploy [contract]')
-  .action((contract) => {
-    loadSchemas('./build/contracts')
-      .then(schemas => schemas.forEach(s => {
-        deploy(s).then(contract => {
-          set(s, 'networks.development.address', contract.address);
-          schema.save(s);
-        });
-      }));
-    });
-  
+  .action(execDeploy);
 
+// COMPILE
 program
   .command('compile [contract]')
   .description('Compile a contract. Defaults to compile all contracts.')
-  .action((contract, options) => {
-    getFilePaths('./contracts')
-      .then(compile.compile)
-      .then(compile.format)
-      .then((schemas) => schemas.forEach(s => schema.save(s)))
-      .catch(console.error)
-  }).on('--help', function() {
+  .action(execCompile)
+  .on('--help', () => {
     console.log('  Examples:');
     console.log();
-    console.log('    $ deploy exec sequential');
-    console.log('    $ deploy exec async');
+    console.log('    $ cosmos compile MetaCoin');
+    console.log('    $ cosmos compile');
     console.log();
   });
 
